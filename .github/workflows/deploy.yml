@@ -18,22 +18,16 @@ jobs:
           username: ec2-user
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Navigate to the correct folder confirmed by your 'pwd' command
             cd /var/www/Laravel-Deployment
-            
-            # Pull latest changes
             git pull origin main
-            
-            # Standard Laravel optimization
             composer install --no-dev --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
-            php artisan route:cache
             
-            # Apply correct permissions for Nginx
+            # Fix permissions for Nginx
             sudo chown -R ec2-user:nginx .
             sudo chmod -R 775 storage bootstrap/cache
             
-            # Restart services to apply changes
+            # Restart services
             sudo systemctl restart php-fpm
             sudo systemctl restart nginx
