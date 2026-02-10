@@ -18,11 +18,23 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/ec2-user/Laravel-Deployment
+            # Navigate to the correct project directory
+            cd /var/www/Laravel-Deployment
+            
+            # Pull latest code
             git pull origin main
+            
+            # Install dependencies and optimize
             composer install --no-dev --optimize-autoloader
-            # Use dot (.) to ensure it targets the current folder correctly
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            # Correct permissions for Nginx and PHP-FPM
             sudo chown -R ec2-user:nginx .
             sudo chmod -R 775 storage bootstrap/cache
+            
+            # Restart services to apply changes
             sudo systemctl restart php-fpm
             sudo systemctl restart nginx
