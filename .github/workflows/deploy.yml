@@ -19,12 +19,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/Laravel-Deployment
-            git pull origin main
-            composer install --no-dev --optimize-autoloader
-            php artisan migrate --force
-            php artisan config:cache
+            git fetch --all
+            git reset --hard origin/main
             
-            # Fix permissions for Nginx
+            composer install --no-dev --optimize-autoloader
+            php artisan optimize:clear
+            
+            # CRITICAL: Reset permissions every time you deploy
             sudo chown -R ec2-user:nginx .
             sudo chmod -R 775 storage bootstrap/cache
             
