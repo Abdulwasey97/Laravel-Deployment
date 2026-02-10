@@ -1,0 +1,36 @@
+name: Deploy Laravel
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/Laravel-Deployment
+            git pull origin main
+            
+            # Laravel standard optimization
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            
+            # Apply correct permissions for Nginx/PHP-FPM
+            sudo chown -R ec2-user:nginx .
+            sudo chmod -R 775 storage bootstrap/cache
+            
+            # Restart services
+            sudo systemctl restart php-fpm
+            sudo systemctl restart nginx
